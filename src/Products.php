@@ -1,6 +1,4 @@
 <?php
-namespace src;
-
 class Products
 {
     public const BROWNIE = 1;

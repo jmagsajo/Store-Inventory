@@ -21,4 +21,12 @@ $(document).ready(function(){
 	        }, 700);
 	    });
 	}
+
+	$.get(
+		'ajax/ajax.php',
+		function(r){
+			console.log(r);
+		}
+	);
+
 });
