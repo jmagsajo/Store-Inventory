@@ -79,13 +79,13 @@ class OrderProcess implements OrderProcessorInterface{
 							$this->reject_order = false; //revert validator if it's true
 						}else{
 							$this->saveTransaction();
-							//check and order stock if below 10
-							$this->checkAndOrderStock();
 						}
 					}
 					//END OF TRANSACTION
 				}
 			}
+			//check and order stock if below 10
+			$this->checkAndOrderStock();
 
 		}
 
@@ -106,8 +106,8 @@ class OrderProcess implements OrderProcessorInterface{
 
 	public function restockItem(){
 		
-		foreach($_SESSION['pending_stocks'] as $id => $pending){
-			if($pending['days'] == 0 && $pending['stock'] > 0){
+		for($id = 1; $id <= 5; $id++){
+			if($_SESSION['pending_stocks'][$id]['days'] == 0 && $_SESSION['pending_stocks'][$id]['stock'] > 0){
 				//re-stock items
 				$new_stock = $_SESSION['products_stocks'][$id] + $_SESSION['pending_stocks'][$id]['stock'];
 				$_SESSION['products_stocks'][$id] = $new_stock ;
