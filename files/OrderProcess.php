@@ -136,7 +136,7 @@ class OrderProcess implements OrderProcessorInterface{
 
 	public function transaction($id, $order){
 
-		if( $_SESSION['stocks_tracker'][$id] > $order ){
+		if( $_SESSION['stocks_tracker'][$id] >= $order ){
 			if(!$this->reject_order){
 				/*process orders*/
 				$stock_update = $_SESSION['stocks_tracker'][$id] - $order;
