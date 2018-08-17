@@ -60,7 +60,8 @@ class OrderProcess implements OrderProcessorInterface{
 		$data = json_decode($json_file, true);
 		
 		foreach($data as $a => $day){ //1st loop orders per day
-			
+			//check remaining day(s) of shipping per day
+			$this->checkShippingDays();
 			foreach($day as $b => $orders){ //2nd loop orders per day
 				
 				$number_of_orders = count($orders); //number of orders per transaction
@@ -85,8 +86,7 @@ class OrderProcess implements OrderProcessorInterface{
 					//END OF TRANSACTION
 				}
 			}
-			//check remaining day(s) of shipping per day
-			$this->checkShippingDays();
+
 		}
 
 	}
@@ -97,7 +97,7 @@ class OrderProcess implements OrderProcessorInterface{
 			if($_SESSION['products_stocks'][$id] < 10){
 				if($_SESSION['pending_stocks'][$id]['stock'] <= 0 && $_SESSION['pending_stocks'][$id]['days'] <= 0){
 					$_SESSION['pending_stocks'][$id]['stock'] = 20;
-					$_SESSION['pending_stocks'][$id]['days'] = 3; //including day today
+					$_SESSION['pending_stocks'][$id]['days'] = 2;
 				}
 			}
 		}
@@ -123,13 +123,15 @@ class OrderProcess implements OrderProcessorInterface{
 	}
 
 	public function checkShippingDays(){
-		$this->restockItem();
+		
 		for($id = 1; $id <= 5; $id++){
 			if($_SESSION['pending_stocks'][$id]['days'] > 0){
 				$update_shipping_days = $_SESSION['pending_stocks'][$id]['days'] - 1;
 				$_SESSION['pending_stocks'][$id]['days'] = $update_shipping_days;
 			}
 		}
+		$this->restockItem();
+		// debug($_SESSION['pending_stocks']);
 	}
 
 	public function transaction($id, $order){
