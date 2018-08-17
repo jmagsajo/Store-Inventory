@@ -26,11 +26,11 @@ class OrderProcess implements OrderProcessorInterface{
 		];
 
 		$peding = [
-			[Products::BROWNIE => 0, 'days' => 0],
-			[Products::LAMINGTON => 0, 'days' => 0],
-			[Products::BLUEBERRY_MUFFIN => 0, 'days' => 0],
-			[Products::CROISSANT => 0, 'days' => 0],
-			[Products::CHOCOLATE_CAKE => 0, 'days' => 0],
+			Products::BROWNIE => [ "stock" => 0, 'days' => 0],
+			Products::LAMINGTON => [ "stock" => 0, 'days' => 0],
+			Products::BLUEBERRY_MUFFIN => ["stock" => 0, 'days' => 0],
+			Products::CROISSANT => [ "stock" => 0, 'days' => 0],
+			Products::CHOCOLATE_CAKE => [ "stock" => 0, 'days' => 0],
 		];
 
 		$received = [
@@ -42,8 +42,11 @@ class OrderProcess implements OrderProcessorInterface{
 		];
 
 		$_SESSION['products_stocks'] = $stocks;
+		$_SESSION['stocks_tracker'] = $stocks; //to track how much item will deduct to the original stock
 		$_SESSION['pending_stocks'] = $peding;
 		$_SESSION['received_stocks'] = $received;
+
+		$_SESSION['sold_stocks_tracker'] = $sold; //to track how much item will be added to sold stocks
 		$_SESSION['sold_stocks'] = $sold;
 
 	}
@@ -54,42 +57,101 @@ class OrderProcess implements OrderProcessorInterface{
 		$data = json_decode($json_file, true);
 		
 		foreach($data as $a => $day){ //1st loop orders per day
-			foreach($day as $b => $orders){ //2nd loop orders per day\
+
+			foreach($day as $b => $orders){ //2nd loop orders per day
+				
+				$number_of_orders = count($orders); //number of orders per transaction
+				$counter = 0;
 				
 				foreach($orders as $c => $order){ //3rd set of order per day
+					$counter++;
+					//begin transaction
+					$this->transaction($c, $order);
 					
-					/*if( $_SESSION['products_stocks'][$c] > $order ){
-
-						//update stock count
-						$stock_update = $_SESSION['products_stocks'][$c] - $order;
-						$_SESSION['products_stocks'][$c] = $stock_update;
-
-						//update sold stock
-						$soldStock = $_SESSION['sold_stocks'][$c] + $order;
-						$_SESSION['sold_stocks'][$c] = $soldStock;
-					}*/
+					if($counter == $number_of_orders){
+						if($this->reject_order){
+							$_SESSION['stocks_tracker'] = $_SESSION['products_stocks']; //revert tracker
+							$_SESSION['sold_stocks_tracker'] = $_SESSION['sold_stocks']; //revert tracker
+							$this->reject_order = false; //revert validator if it's true
+						}else{
+							$this->saveTransaction();
+							//check and order stock if below 10
+							$this->checkAndOrderStock();
+						}
+					}
+					//END OF TRANSACTION
 				}
 
 			}
-
+			//check remaining day(s) of shipping per day
+			$this->checkShippingDays();
 		}
 
 	}
 
-	public function orderStock($id){
+	public function checkAndOrderStock(){
+
+		for($id = 1; $id <= 5; $id++){
+			if($_SESSION['products_stocks'][$id] < 10){
+				$_SESSION['pending_stocks'][$id]['stock'] = 20;
+				$_SESSION['pending_stocks'][$id]['days'] = 2;
+			}
+		}
 
 	}
 
-	public function shippingDays($id){
+	public function restockItem(){
+		foreach($_SESSION['pending_stocks'] as $id => $pending){
+			if($pending['days'] == 0 && $pending['stock'] > 0){
+				//re-stock items
+				$new_stock = $_SESSION['products_stocks'][$id] + $_SESSION['pending_stocks'][$id]['stock'];
+				$_SESSION['products_stocks'][$id] = $new_stock ;
+				$_SESSION['stocks_tracker'][$id] = $_SESSION['products_stocks'][$id]; //update stock tracker
+
+				//update received stocks
+				$received_stocks = $_SESSION['received_stocks'][$id] + $_SESSION['pending_stocks'][$id]['stock'];
+				$_SESSION['received_stocks'][$id] = $received_stocks;
+
+				$_SESSION['pending_stocks'][$id]['stock'] = 0; //revert pending item to 0
+			}
+		}
+	}
+
+	public function checkShippingDays(){
+		for($id = 1; $id <= 5; $id++){
+			
+			if($_SESSION['pending_stocks'][$id]['days'] > 0){
+				$update_shipping_days = $_SESSION['pending_stocks'][$id]['days'] - 1;
+				$_SESSION['pending_stocks'][$id]['days'] = $update_shipping_days;
+			}
+			
+		}
+		$this->restockItem();
 
 	}
 
 	public function transaction($id, $order){
 
+		if( $_SESSION['stocks_tracker'][$id] > $order ){
+			if(!$this->reject_order){
+				/*process orders*/
+				$stock_update = $_SESSION['stocks_tracker'][$id] - $order;
+				$_SESSION['stocks_tracker'][$id] = $stock_update;
+
+				$soldStock = $_SESSION['sold_stocks_tracker'][$id] + $order;
+				$_SESSION['sold_stocks_tracker'][$id] = $soldStock;
+			}
+		}else{
+			$this->reject_order = true; //reject the whole order
+		}
 	}
 
-	public function saveTransaction($transaction){
+	public function saveTransaction(){
+		//update current stock
+		$_SESSION['products_stocks'] = $_SESSION['stocks_tracker']; //copy stock tracker if transaction is valid
 
+		//update sold stock
+		$_SESSION['sold_stocks'] = $_SESSION['sold_stocks_tracker']; //copy sold tracker if transaction is valid
 	}
 
 }
