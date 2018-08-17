@@ -4,7 +4,8 @@ include '../src/InventoryInterface.php';
 class Inventory implements InventoryInterface{
 	
 	public function getStockLevel(int $productId) : int{
-		return $productId;
+		$result = (int)$_SESSION['products_stocks'][$productId];
+		return $result;
 	}
 
 }

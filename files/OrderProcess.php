@@ -2,6 +2,9 @@
 include 'session.php';
 include '../src/Products.php';
 include '../src/OrderProcessorInterface.php';
+include 'Inventory.php';
+include 'ProductsPurchased.php';
+include 'ProductsSold.php';
 
 class OrderProcess implements OrderProcessorInterface{
 	
@@ -152,6 +155,43 @@ class OrderProcess implements OrderProcessorInterface{
 
 		//update sold stock
 		$_SESSION['sold_stocks'] = $_SESSION['sold_stocks_tracker']; //copy sold tracker if transaction is valid
+	}
+
+
+	public function getReports(){
+
+		$inventory = new Inventory();
+		$pruchased = new ProductsPurchased();
+		$sold = new ProductsSold();
+
+		$stocks_level = [];
+		$pending = [];
+		$received = [];
+		$total_sold = [];
+
+		for($id = 1; $id <= 5; $id++){
+			$stocks_level[$id] = ['name' => $this->getProductName($id),'total'=> $inventory->getStockLevel($id)];
+			$pending[$id] = ['name' => $this->getProductName($id), 'total'=> $pruchased->getPurchasedReceivedTotal($id)];
+			$received[$id] = ['name' => $this->getProductName($id), 'total'=> $pruchased->getPurchasedPendingTotal($id)];
+			$total_sold[$id] = ['name' => $this->getProductName($id), 'total'=> $sold->getSoldTotal($id)];
+		}
+
+		return ["inventory" => $stocks_level, 'pending' => $pending, 'received' => $received, 'total_sold' => $total_sold];
+
+	}
+
+	public function getProductName($id){
+
+		$arr = [
+			1 => 'BROWNIE',
+			2 => 'LAMINGTON',
+			3 => 'BLUEBERRY MUFFIN',
+			4 => 'CROISSANT',
+			5 => 'CHOCOLATE CAKE'
+		];
+
+		return $arr[$id];
+
 	}
 
 }

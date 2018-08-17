@@ -25,7 +25,7 @@ $(document).ready(function(){
 	$.get(
 		'ajax/ajax.php',
 		function(r){
-			console.log(r);
+			$('.result-container').html(r);
 		}
 	);
 
