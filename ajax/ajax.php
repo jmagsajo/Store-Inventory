@@ -1,8 +1,8 @@
 <?php
-	include '../files/OrderProcess.php';
+	include '../src/OrderProcess.php';
 
 	$ProcessOrder = new OrderProcess;
-	$ProcessOrder->processFromJson("../orders-sample.json");
+	$process = $ProcessOrder->processFromJson("../orders-sample.json");
 	$result = $ProcessOrder->getReports();
 ?>
 	
